@@ -13,11 +13,12 @@ def runServer():
     conn, addr = s.accept() 
     print("New connection made from: " + str(addr))
     while True:
+        #receive client data
         data = conn.recv(PKT_SIZE).decode()
         if not data:
             # if data is not received break
             break
-        #receive client data
+        #connect
         print("client said:" + str(data))
 
         #get input

