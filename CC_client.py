@@ -24,7 +24,7 @@ def runClient():
         finally:
             pass
         print('Decrypted: ' + decrypted_data)
-        return_message = "ok"  # again take input
+        return_msg = "ok"  # again take input
 
     s.shutdown(socket.SHUT_RD)
     s.close()  # close the connection
