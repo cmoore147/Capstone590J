@@ -12,7 +12,7 @@ def runClient():
     while True:
         
         ##grab user input
-        user_input = input('> ')
+        user_input = input('MS-C2> ')
 
         ##check for 'exit' command
         if (user_input.strip() == 'exit'):
@@ -159,7 +159,31 @@ def processInput(user_input):
         return None
     return None
 
-
+#def printSplash()
+#just print that hacker splash...
+def printSplash():
+    ascii_splash = [
+    "##############################################################################",
+    "#                  ,-,-.                                                     #",
+    "#                 ;,' `.:                                                    #",
+    "#        _        : @ @ :                MIGHTER-SPLOIT C2 client            #",
+    "#     ,-._)       :  L  ;                                                    #",
+    "#    ,' <.\     ,-`.(=),'-.                                                  #",
+    "#    \  /./\__,'\|`.`-','//`.                 Developed by:                  #",
+    "#   `.>' |      :|>_`.' /::  :                      Sam Harris               #",
+    "#         `----\"//;__[-]/  |  |                    Connor Moore              #",
+    "#              ;/    : |_||  |                      Cam Harvey               #",
+    "#              |     :    ;  ;                                               #",
+    "#              ;`.___:__,'  ;                                                #",
+    "#             ,'`._____;__,:                                                 #",
+    "#           ,'_...----/ /.._\                                                #",
+    "#         _;-'       =uu=    `._                                             #",
+    "#       ,',  __,--.-----.-.__  .`.                                           #",
+    "#     ,',',-'| _..|-----|._  |-.`.`.                                         #",
+    "##############################################################################"]
+    for elem in ascii_splash:
+        print(elem)
+    return
 #######################################################################################
 # TEA implementation: https://gist.github.com/twheys/4e83567942172f8ba85058fae6bfeef5 #
 #######################################################################################
@@ -237,5 +261,9 @@ def _vec2str(vector, l=4):
                  for element in vector
                  for i in range(l)).replace(b'\x00', b'')
 
+
+
+
 if __name__ == '__main__':
+    printSplash()
     runClient()
