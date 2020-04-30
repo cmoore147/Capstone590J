@@ -3,15 +3,20 @@ import socket, subprocess, os, time, base64, ctypes, itertools, math, sys, codec
 def runServer():
     HOST = "localhost" #"192.168.1.8"
     PORT = 1337 #52
-    PKT_SIZE = 1024
-    KEY = "zMWYCRLd4szoBiPP"
 
     s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     s.bind((HOST, PORT))
     s.listen(2)
 
-    conn, addr = s.accept() 
-    print("New connection made from: " + str(addr))
+    while True:
+        conn, addr = s.accept() 
+        print("New connection made from: " + str(addr))
+        connectionLoop(conn, addr)
+    
+    conn.close()  # close the connection
+
+def connectionLoop(conn, addr):
+    PKT_SIZE = 1024
     while True:
         ##receive client data
         recv_data = conn.recv(PKT_SIZE).decode()
@@ -57,9 +62,7 @@ def runServer():
 
         #send return packet data
         conn.send(packet.encode())
-
-
-    conn.close()  # close the connection
+    return
 
 ######################
 #  Helper functions  #
