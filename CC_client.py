@@ -56,8 +56,9 @@ def runClient():
             print("recv data decryption error")
             continue
 
-        ##print the return message 
-        print('Received from server: ' + recv_msg)
+        #DEBUGGING: print the 
+        print("server said (enc):" + str(recv_data))
+        print("server said (dec):" + str(recv_msg))
 
     s.shutdown(socket.SHUT_RD)
     s.close()  # close the connection
