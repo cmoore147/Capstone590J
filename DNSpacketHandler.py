@@ -60,22 +60,4 @@ def packetDecode(response):
     return response
 
 
-"""
-def sendit():
-    cmd = input("Enter shell command: ")
 
-    #print("testing",binascii.unhexlify("14360000"))
-    #address = input("Enter ip Address")
-    #port = input("Enter port")
-    address = '192.168.3.156'
-    port = 53
-
-    pack = DnsPacket(cmd)
-
-    addport = (address, port)
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        sock.sendto(pack, addport)
-    finally:
-        sock.close()
-"""
