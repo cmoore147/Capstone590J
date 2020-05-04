@@ -1,4 +1,4 @@
-import socket, subprocess, os, time, base64, ctypes, itertools, math, sys, codecs
+import socket, subprocess, os, time, base64, ctypes, itertools, math, sys, codecs, pyaes
 
 def runClient(HOST,PORT):
     PKT_SIZE = 1024
@@ -37,10 +37,12 @@ def runClient(HOST,PORT):
             continue
 
         ##send the packet
-        s.send(packet.encode())
+        #s.send(packet.encode())
+        s.send(packet)
 
         ##receive the server's response
-        recv_data = s.recv(PKT_SIZE).decode()
+        #recv_data = s.recv(PKT_SIZE).decode()
+        recv_data = s.recv(PKT_SIZE)
 
         ##unpack message from data into recv_msg
         recv_msg, err = unpackData(recv_data)
@@ -68,13 +70,14 @@ def runClient(HOST,PORT):
 #def packInput(user_input)
 #args: user_input - user provided command string
 #returns: (packet, err) - DNS packet and error message
-#    err = 0 ; no error
-#        = 1 ; user_input length error
-#        = 2 ; encryption error
-#        = 3 ; decryption error
-#        = 4 ; packet crafting error
+#   err = 0 ; no error
+#       = 1 ; user_input length error
+#       = 2 ; encryption error
+#       = 3 ; decryption error
+#       = 4 ; packet crafting error
 def packInput(user_input):
-    TEA_KEY = "zMWYCRLd4szoBiPP"
+    AES_KEY = "zMWYCRLd4szoBiPP".encode('utf-8')
+    aes = pyaes.AESModeOfOperationCTR(AES_KEY) 
     packet = None
     err = 0
 
@@ -83,11 +86,11 @@ def packInput(user_input):
     if(safe_input == None):
         err = 1
         return packet, err
-    
+    print(safe_input)
     ##encryption
     encrypted_safe_input = ""
     try:
-        encrypted_safe_input = encrypt(safe_input, TEA_KEY)
+        encrypted_safe_input = aes.encrypt(safe_input)
     except Exception as e:
         err = 2
         return packet, err
@@ -96,7 +99,7 @@ def packInput(user_input):
     
     ##decryption test
     try:
-        decrypt(encrypted_safe_input, TEA_KEY)
+        aes.decrypt(encrypted_safe_input)#.decode('utf-8')
     except Exception as e:
         err = 2
         return packet, err
@@ -112,11 +115,12 @@ def packInput(user_input):
 #def unpackData(recv_data)
 #args: recv_data - packet recieved from server
 #returns: (recv_msg, err) - extracted plaintext message and error message
-#    err = 0 ; no error
-#        = 1 ; unpacking error
-#        = 2 ; decryption error
+#   err = 0 ; no error
+#       = 1 ; unpacking error
+#       = 2 ; decryption error
 def unpackData(recv_data):
-    TEA_KEY = "zMWYCRLd4szoBiPP"
+    AES_KEY = "zMWYCRLd4szoBiPP".encode('utf-8')
+    aes = pyaes.AESModeOfOperationCTR(AES_KEY) 
     recv_msg = None
     err = 0
 
@@ -125,7 +129,7 @@ def unpackData(recv_data):
 
     ##decrypt message
     try:
-        recv_msg = decrypt(encrypted_recv_msg, TEA_KEY)
+        recv_msg = aes.decrypt(encrypted_recv_msg)#.decode('utf-8')
     except Exception as e:
         err = 2
         return recv_msg, err
@@ -143,19 +147,10 @@ def unpackData(recv_data):
 #returns: None if user_input is too long (>512 bytes)
 #otherwise, user_input padded to a certain length with whitespace. 
 def processInput(user_input):
-    len_input = len(user_input)
-    if(len_input <= 64):
-        return (user_input + ' ' * (64 - len(user_input)))
-    elif(len_input <= 128):
-        return (user_input + ' ' * (128 - len(user_input)))
-    elif(len_input <= 256):
-        return (user_input + ' ' * (256 - len(user_input)))
-    elif(len_input <= 512):
-        return (user_input + ' ' * (512 - len(user_input)))
-    else:
+    if(len(user_input) > 960):
         #command was too large
         return None
-    return None
+    return user_input
 
 #def printSplash()
 #just print that hacker splash...

