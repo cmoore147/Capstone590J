@@ -54,7 +54,7 @@ def connectionLoop(conn, addr):
         
         #****check if output is > 512 bytes; trim size if so
         if(len(cmd_output) > 512):
-            print("Oops")
+            cmd_output = cmd_output[0:512]
 
         ##craft return packet with cmd_output
         packet, err = packInput(cmd_output)
