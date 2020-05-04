@@ -57,8 +57,11 @@ def runClient(HOST,PORT):
             continue
 
         #DEBUGGING: print the 
-        print("server said (enc):" + str(recv_data))
-        print("server said (dec):" + str(recv_msg))
+        print("server said (enc):")
+        print(str(recv_data))
+        print("------------------------------------")
+        print("server said (dec):")
+        print(str(recv_msg)[2:-1].replace('\\n','\n'))
 
     s.shutdown(socket.SHUT_RD)
     s.close()  # close the connection
