@@ -263,6 +263,9 @@ def _vec2str(vector, l=4):
 
 
 if __name__ == '__main__':
+    if sys.version_info[0] != 3:
+        print("This server requires Python 3")
+        sys.exit(1)
     printSplash()
     HOST = "localhost" #"192.168.1.8"
     PORT = 1337 #52
