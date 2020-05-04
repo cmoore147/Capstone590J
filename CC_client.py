@@ -1,4 +1,4 @@
-import socket, subprocess, os, time, sys, codecs, pyaes
+import socket, subprocess, os, time, sys, codecs, pyaes, DNSpacketHandler
 
 def runClient(HOST,PORT):
     PKT_SIZE = 1024
@@ -110,6 +110,7 @@ def packInput(user_input):
         pass
 
     ##craft packet
+    #packet = DNSpacketHandler.packetEncode(encrypted_safe_input)
     packet = encrypted_safe_input
 
     #return packet
@@ -128,6 +129,7 @@ def unpackData(recv_data):
     err = 0
 
     ##extract message packet
+    #encrypted_recv_msg = DNSpacketHandler.packetDecode(recv_data)
     encrypted_recv_msg = recv_data
 
     ##decrypt message

@@ -1,4 +1,4 @@
-import socket, subprocess, os, time, sys, codecs, pyaes
+import socket, subprocess, os, time, sys, codecs, pyaes, DNSpacketHandler
 
 
 def runServer(HOST,PORT):
@@ -134,6 +134,7 @@ def packInput(user_input):
         pass
 
     ##craft packet
+    #packet = DNSpacketHandler.packetEncode(encrypted_safe_input)
     packet = encrypted_safe_input
 
     #return packet
@@ -152,6 +153,7 @@ def unpackData(recv_data):
     err = 0
 
     ##extract message packet
+    #encrypted_recv_msg = DNSpacketHandler.packetDecode(recv_data)
     encrypted_recv_msg = recv_data
 
     ##decrypt message
@@ -214,7 +216,7 @@ def randomString(stringLength=10):
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(stringLength))
 
-    
+
 
 if __name__ == '__main__':
     if sys.version_info[0] != 3:
