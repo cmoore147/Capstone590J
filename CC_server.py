@@ -1,10 +1,7 @@
 import socket, subprocess, os, time, base64, ctypes, itertools, math, sys, codecs
 
 
-def runServer():
-    HOST = "localhost" #"192.168.1.8"
-    PORT = 1337 #52
-
+def runServer(HOST,PORT):
     s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     s.bind((HOST, PORT))
     s.listen(2)
@@ -300,4 +297,6 @@ def _vec2str(vector, l=4):
                  for i in range(l)).replace(b'\x00', b'')
 
 if __name__ == '__main__':
-    runServer()
+    HOST = "localhost" #"192.168.1.8"
+    PORT = 1337 #52
+    runServer(HOST,PORT)
