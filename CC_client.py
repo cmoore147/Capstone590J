@@ -1,8 +1,6 @@
 import socket, subprocess, os, time, base64, ctypes, itertools, math, sys, codecs
 
-def runClient():
-    HOST = "localhost" #"192.168.1.8"
-    PORT = 1337 #52
+def runClient(HOST,PORT):
     PKT_SIZE = 1024
 
     s = socket.socket()  # instantiate
@@ -266,4 +264,6 @@ def _vec2str(vector, l=4):
 
 if __name__ == '__main__':
     printSplash()
-    runClient()
+    HOST = "localhost" #"192.168.1.8"
+    PORT = 1337 #52
+    runClient(HOST,PORT)
